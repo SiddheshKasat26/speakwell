@@ -1,5 +1,4 @@
 import whisper
-import os
 
 # Load once at startup - loading is slow, inference is fast
 model = whisper.load_model("base") # options: tiny, base, small, medium
