@@ -8,6 +8,12 @@ class Settings(BaseSettings):
     debug: bool = False
     environment: str = Field(default="development", env="ENVIRONMENT")
 
+    # CORS
+    allowed_origins: list[str] = Field(
+        default=["http://localhost:3000"],
+        env="ALLOWED_ORIGINS"
+    )
+
     # AI Services
     groq_api_key: str = Field(..., env="GROQ_API_KEY")
     groq_model: str = Field(
