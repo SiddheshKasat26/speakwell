@@ -1,5 +1,6 @@
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware 
+from fastapi.staticfiles import StaticFiles
 from config import settings
 from routers import audio
 
@@ -17,6 +18,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Serve generated audio files
+app.mount("/audio", StaticFiles(directory="generated_audio"), name="audio")
+
+# API routes
 app.include_router(audio.router, prefix="/api/audio", tags=["audio"])
 
 @app.get("/health")

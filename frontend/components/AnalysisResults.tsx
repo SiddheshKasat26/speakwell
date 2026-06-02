@@ -1,6 +1,7 @@
 "use client";
 
 import { PipelineResult } from "@/types/analysis";
+import AudioPlayer from "./AudioPlayer";
 
 interface Props {
   result: PipelineResult;
@@ -105,6 +106,10 @@ export default function AnalysisResults({ result }: Props) {
           </div>
         </div>
       )}
+      <AudioPlayer
+      audioUrl={result.corrected_audio_url}
+      label="Listen to corrected version"
+      />
     </div>
   );
 }

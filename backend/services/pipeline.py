@@ -26,8 +26,10 @@ def run_full_pipeline(audio_file_path: str) -> dict:
     # Cleanup uploaded file
     os.remove(audio_file_path)
 
+    filename = os.path.basename(corrected_audio_path)
+
     return {
         "original_transcript": transcription["text"],
         "analysis": analysis,
-        "corrected_audio_path": corrected_audio_path
+        "corrected_audio_url": f"/audio/{filename}"
     }

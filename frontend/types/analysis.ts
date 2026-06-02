@@ -27,5 +27,5 @@ export interface Analysis {
 export interface PipelineResult {
     original_transcript: string;
     analysis: Analysis;
-    corrected_audio_path: string;
+    corrected_audio_url: string;
 }
