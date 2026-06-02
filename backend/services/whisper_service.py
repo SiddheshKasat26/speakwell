@@ -1,7 +1,8 @@
 import whisper
+from config import settings
 
 # Load once at startup - loading is slow, inference is fast
-model = whisper.load_model("base") # options: tiny, base, small, medium
+model = whisper.load_model(settings.whisper_model)
 
 def transcribe_audio(file_path: str) -> dict:
     """

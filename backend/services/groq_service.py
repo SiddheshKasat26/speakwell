@@ -1,5 +1,6 @@
 from groq import Groq
 from config import settings
+import json
 
 client = Groq(api_key=settings.groq_api_key)
 
@@ -21,7 +22,7 @@ def analyze_transcript(transcript: str) -> dict:
     Send transcript to Groq ( Llama 3 ) for analysis and correction.
     """
     response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
+        model=settings.groq_model,
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": f"Analyze this transcript:\n\n{transcript}"}
@@ -29,7 +30,5 @@ def analyze_transcript(transcript: str) -> dict:
         temperature=0.3, # lower = more consistent, less creative
         max_tokens= 1000
     )
-
-    import json
     raw = response.choices[0].message.content
     return json.loads(raw)

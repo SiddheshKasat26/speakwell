@@ -1,7 +1,8 @@
+import os
+from config import settings
 from services.whisper_service import transcribe_audio
 from services.groq_service import analyze_transcript
 from services.tts_service import text_to_speech
-import os
 
 def run_full_pipeline(audio_file_path: str) -> dict:
     """
@@ -24,7 +25,8 @@ def run_full_pipeline(audio_file_path: str) -> dict:
     corrected_audio_path = text_to_speech(analysis["corrected_text"])
 
     # Cleanup uploaded file
-    os.remove(audio_file_path)
+    if os.path.exists(audio_file_path):
+        os.remove(audio_file_path)
 
     filename = os.path.basename(corrected_audio_path)
 

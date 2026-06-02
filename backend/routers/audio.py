@@ -1,13 +1,13 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from services.pipeline import run_full_pipeline
+from config import settings
 import shutil
 import uuid
 import os
 
 router = APIRouter()
 
-UPLOAD_DIR = "uploaded_audio"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(settings.upload_dir, exist_ok=True)
 
 @router.post("/analyze")
 async def analyze_audio(file: UploadFile = File(...)):
@@ -21,7 +21,7 @@ async def analyze_audio(file: UploadFile = File(...)):
 
     # Save uploaded file temporarily
     temp_filename = f"{uuid.uuid4()}_{file.filename}"
-    temp_path = os.path.join(UPLOAD_DIR, temp_filename)
+    temp_path = os.path.join(settings.upload_dir, temp_filename)
 
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
