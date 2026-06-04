@@ -6,6 +6,7 @@ import AnalysisResults from "@/components/AnalysisResults";
 import { analyzeAudio } from "@/services/api";
 import { PipelineResult } from "@/types/analysis";
 import Link from "next/link";
+import { saveSession } from "@/services/history";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -22,6 +23,7 @@ export default function Home() {
     try {
       const data = await analyzeAudio(blob);
       setResult(data);
+      await saveSession(data, "00000000-0000-0000-0000-000000000001");
       setStatus("done");
     } catch (err) {
       setError("Something went wrong. Is the backend running?");

@@ -26,6 +26,23 @@ async def analyze_audio(file: UploadFile = File(...)):
     with open(temp_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    # Run pipeline
-    result = run_full_pipeline(temp_path)
-    return result
+    # Enforcing file size
+    file_size_mb = os.path.getsize(temp_path) / (1024*1024)
+    if file_size_mb > settings.max_audio_size_mb:
+        os.remove(temp_path)
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Max size is {settings.max_audio_size_mb}MB"
+        )
+
+    # Run pipeline only if file is valid
+    try:
+        result = run_full_pipeline(temp_path)
+        return result
+    except Exception as e:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Pipeline failed: {str(e)}"
+        )
