@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { getUserSessions } from "@/services/history";
 import Link from "next/link";
 
-// Temporary: hardcoded test user ID
-const TEST_USER_ID = "00000000-0000-0000-0000-000000000001";
+// Temporary: hardcoded test user ID ( make sure this matches api.ts exactly )
+const TEST_USER_ID = "4b9548d5-5659-4bc6-8331-4990e86ca706"; // same UUID as api.ts
 
 interface Session {
   id: string;
@@ -27,8 +27,16 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     getUserSessions(TEST_USER_ID)
-      .then(setSessions)
+      .then((data) => {
+        console.log("Session fetched:", data); // temporary debug log
+        setSessions(data ?? []);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch sessions:", err);
+        setSessions([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 

@@ -4,9 +4,10 @@ import { useState, useRef } from "react";
 
 interface VoiceRecorderProps {
     onRecordingComplete: (blob: Blob) => void;
+    onAudioReady: (url: string) => void; // ← gives parent a playable URL
 }
 
-export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProps) {
+export default function VoiceRecorder({ onRecordingComplete, onAudioReady }: VoiceRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -26,7 +27,12 @@ export default function VoiceRecorder({ onRecordingComplete }: VoiceRecorderProp
 
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-      onRecordingComplete(blob);
+
+      // Create a local URL for immediate playback — no server needed
+      const localUrl = URL.createObjectURL(blob);
+      onAudioReady(localUrl); // ← tell parent the URL
+      onRecordingComplete(blob); // ← tell parent the blob
+
       // Stop microphone stream
       stream.getTracks().forEach((track) => track.stop());
     };

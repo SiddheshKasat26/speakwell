@@ -29,6 +29,9 @@ export async function getUserSessions(userId: string) {
     .order("created_at", { ascending: false })
     .limit(20);
 
-  if (error) throw error;
-  return data;
+  if (error) {
+    console.error("Supabase fetch error:", error);
+    return [];
+  }
+  return data ?? [];
 }
