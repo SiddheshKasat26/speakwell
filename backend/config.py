@@ -1,3 +1,4 @@
+from datetime import timedelta
 from pydantic_settings import BaseSettings
 from pydantic import Field
 
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
     upload_dir: str = Field(default="uploaded_audio", env="UPLOAD_DIR")
     output_dir: str = Field(default="generated_audio", env="OUTPUT_DIR")
     max_audio_size_mb: int = Field(default=25, env="MAX_AUDIO_SIZE_MB")
+
+    # Redis
+    redis_url: str = Field(default="redis://localhost:6379/0", env="REDIS_URL")
+    celery_result_ttl: int = Field(default=3600, env="CELERY_RESULT_TTL")
 
     class Config:
         env_file = ".env"
