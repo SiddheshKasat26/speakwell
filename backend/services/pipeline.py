@@ -4,6 +4,7 @@ from services.whisper_service import transcribe_audio
 from services.groq_service import analyze_transcript
 from services.tts_service import generate_dual_audio
 from services.supabase_service import save_session
+from services.filler_service import detect_fillers
 
 
 def run_full_pipeline(audio_file_path: str, user_id: str = None) -> dict:
@@ -33,9 +34,17 @@ def run_full_pipeline(audio_file_path: str, user_id: str = None) -> dict:
 
     print(f"[Pipeline] Transcript: {transcript_text}")
 
+    # Detect fillers from raw words — before Groq collapses them
+    raw_words = transcription.get("raw_words", [])
+    detected_fillers = detect_fillers(raw_words)
+    print(f"[Pipeline] Fillers detected: {detected_fillers}")
+
     # Stage 2 — AI analysis
+    # Pass detected fillers to Groq so it doesn't re-detect from cleaned text
     print("[Pipeline] Stage 2: Analyzing with Groq...")
-    analysis = analyze_transcript(transcript_text)  # ← use validated text
+    analysis = analyze_transcript(
+        transcript_text, detect_fillers
+    )  # ← use validated text
 
     # Stage 3 — Generate both audio versions
     print("[Pipeline] Stage 3: Generating audio...")

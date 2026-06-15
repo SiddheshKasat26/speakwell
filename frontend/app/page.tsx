@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import VoiceRecorder from "@/components/VoiceRecorder";
 import AnalysisResults from "@/components/AnalysisResults";
-import { analyzeAudio } from "@/services/api";
+import { submitAudio, pollTaskResult } from "@/services/api";
 import { PipelineResult } from "@/types/analysis";
 import { getUserSessions } from "@/services/history";
 
@@ -42,16 +42,22 @@ export default function Home() {
     setError("");
 
     try {
-      const data = await analyzeAudio(blob);
+      // Step 1 — Submit and get task_id immediately
+      const taskId = await submitAudio(blob);
+      console.log("[SpeakWell] Task queued:", taskId);
+
+      // Step 2 — Poll until done
+      const data = await pollTaskResult(taskId, (status) => {
+        console.log("[SpeakWell] Task status:", status);
+      });
+
       setResult(data);
       setStatus("done");
 
-      // Only increment if session was actually saved
       if (data.session_id) {
         setSessionCount((c) => c + 1);
       }
     } catch (err: any) {
-      // Extract the real error message from FastAPI's response
       const detail =
         err?.response?.data?.detail ||
         err?.message ||
