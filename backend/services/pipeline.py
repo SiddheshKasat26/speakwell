@@ -43,7 +43,7 @@ def run_full_pipeline(audio_file_path: str, user_id: str = None) -> dict:
     # Pass detected fillers to Groq so it doesn't re-detect from cleaned text
     print("[Pipeline] Stage 2: Analyzing with Groq...")
     analysis = analyze_transcript(
-        transcript_text, detect_fillers
+        transcript_text, detected_fillers
     )  # ← use validated text
 
     # Stage 3 — Generate both audio versions
