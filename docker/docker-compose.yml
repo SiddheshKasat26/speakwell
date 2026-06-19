@@ -1,0 +1,71 @@
+services:
+
+  # Redis
+  redis:
+    image: redis:7-alpine # same version you're already running
+    container_name: speakwell-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s # check every 5 seconds
+      timeout: 3s # fail if no response in 3 seconds
+      retries: 5 # try 5 times before marking unhealthy
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
+    build:
+      context: ../backend # where to find the Dockerfile
+      dockerfile: Dockerfile
+    container_name: speakwell-backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../backend/.env # inject all .env vars into container
+    volumes:
+      # Mount audio directories so files persist outside container
+      - ../backend/uploaded_audio:/app/uploaded_audio
+      - ../backend/generated_audio:/app/generated_audio
+    depends_on:
+      redis:
+        condition: service_healthy # wait for Redis healthcheck to pass
+    restart: unless-stopped
+    # CMD from Dockerfile runs FastAPI
+
+  # Celery Worker
+  celery-worker:
+    build:
+      context: ../backend # SAME Dockerfile as backend
+      dockerfile: Dockerfile
+    container_name: speakwell-worker
+    command: >
+      celery -A celery_app worker
+      --loglevel=info
+      --pool=solo
+    env_file:
+      - ../backend/.env
+    volumes:
+      - ../backend/uploaded_audio:/app/uploaded_audio
+      - ../backend/generated_audio:/app/generated_audio
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # command: overrides the Dockerfile CMD — runs Celery instead of FastAPI
+
+  # Next.js Frontend
+  frontend:
+  build:
+    context: ../frontend
+    dockerfile: Dockerfile
+  container_name: speakwell-frontend
+  ports:
+    - "3000:3000"
+  environment:
+    - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+    - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    - NEXT_PUBLIC_API_URL=http://backend:8000
+  depends_on:
+    - backend
+  restart: unless-stopped

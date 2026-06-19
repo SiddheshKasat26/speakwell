@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";  // ← skip static pre-rendering
+
 import { useEffect, useState } from "react";
 import { getUserSessions } from "@/services/history";
 import Link from "next/link";
