@@ -21,14 +21,6 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-
-# Build argument — can be overridden at build time
-# Default matches config.py default
-ARG WHISPER_MODEL=base
-# Pre-download Whisper model during build
-# This bakes the model into the image so no network needed at runtime
-RUN python -c "import whisper; whisper.load_model('${WHISPER_MODEL}')"
-
 # Stage 5: Copy application code
 # Copied AFTER dependencies so code changes don't invalidate the dependency cache layer
 COPY . .

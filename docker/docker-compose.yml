@@ -16,8 +16,6 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-      args:
-        WHISPER_MODEL: ${WHISPER_MODEL:-base} # reads from docker/.env, defaults to base
     container_name: speakwell-backend
     ports:
       - "8000:8000"
@@ -26,6 +24,7 @@ services:
     volumes:
       - ../backend/uploaded_audio:/app/uploaded_audio
       - ../backend/generated_audio:/app/generated_audio
+      - whisper-cache:/root/.cache/whisper # ← shared model cache
     depends_on:
       redis:
         condition: service_healthy
@@ -35,8 +34,6 @@ services:
     build:
       context: ../backend
       dockerfile: Dockerfile
-      args:
-        WHISPER_MODEL: ${WHISPER_MODEL:-base}
     container_name: speakwell-worker
     command: celery -A celery_app worker --loglevel=info --pool=solo
     env_file:
@@ -44,6 +41,7 @@ services:
     volumes:
       - ../backend/uploaded_audio:/app/uploaded_audio
       - ../backend/generated_audio:/app/generated_audio
+      - whisper-cache:/root/.cache/whisper # ← same shared cache
     depends_on:
       redis:
         condition: service_healthy
@@ -63,3 +61,11 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  volumes:
+    whisper-cache:
+      driver: local
+      driver_opts:
+        type: none
+        o: bind
+        device: "C:/Users/Siddhesh/.cache/whisper"
