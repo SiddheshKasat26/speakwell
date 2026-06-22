@@ -1,7 +1,7 @@
 # Stage 1: Base image
 # We use Python 3.11 slim — smaller than full image (~50MB vs ~300MB)
 # slim removes documentation, test files, and unused tools
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Stage 2: System dependencies
 # ffmpeg is needed by Whisper and pydub for audio processing
@@ -20,6 +20,14 @@ WORKDIR /app
 # This is critical for Docker layer caching
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
+
+
+# Build argument — can be overridden at build time
+# Default matches config.py default
+ARG WHISPER_MODEL=base
+# Pre-download Whisper model during build
+# This bakes the model into the image so no network needed at runtime
+RUN python -c "import whisper; whisper.load_model('${WHISPER_MODEL}')"
 
 # Stage 5: Copy application code
 # Copied AFTER dependencies so code changes don't invalidate the dependency cache layer

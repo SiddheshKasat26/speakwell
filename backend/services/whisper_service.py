@@ -3,7 +3,15 @@ import librosa
 import numpy as np
 from config import settings
 
-model = whisper.load_model(settings.whisper_model)
+# Don't load at import time — load on first use
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        print(f"[Whisper] Loading model: {settings.whisper_model}")
+        _model = whisper.load_model(settings.whisper_model)
+    return _model
 
 INITIAL_PROMPT = (
     "This is a person practicing English speaking. "
@@ -95,6 +103,8 @@ def transcribe_audio(file_path: str) -> dict:
             "raw_words": [],
             "hallucinated": True,
         }
+    
+    model = get_model() # ← load on demand, not at startup
 
     result = model.transcribe(
         file_path,
