@@ -1,14 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-// Guard — prevents crash during Docker build pre-rendering
 if (!supabaseUrl || !supabaseKey) {
-  if (typeof window !== "undefined") {
-    // Only throw on the browser, not during server-side build
-    throw new Error("Missing Supabase environment variables");
-  }
+  console.warn("Supabase env vars missing — some features may not work");
 }
 
 export const supabase = createClient(

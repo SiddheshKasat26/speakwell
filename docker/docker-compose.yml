@@ -24,7 +24,7 @@ services:
     volumes:
       - ../backend/uploaded_audio:/app/uploaded_audio
       - ../backend/generated_audio:/app/generated_audio
-      - whisper-cache:/root/.cache/whisper # ← shared model cache
+      - whisper-cache:/root/.cache/whisper
     depends_on:
       redis:
         condition: service_healthy
@@ -41,7 +41,7 @@ services:
     volumes:
       - ../backend/uploaded_audio:/app/uploaded_audio
       - ../backend/generated_audio:/app/generated_audio
-      - whisper-cache:/root/.cache/whisper # ← same shared cache
+      - whisper-cache:/root/.cache/whisper
     depends_on:
       redis:
         condition: service_healthy
@@ -51,21 +51,25 @@ services:
     build:
       context: ../frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
     container_name: speakwell-frontend
     ports:
       - "3000:3000"
     environment:
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - backend
     restart: unless-stopped
 
-  volumes:
-    whisper-cache:
-      driver: local
-      driver_opts:
-        type: none
-        o: bind
-        device: "C:/Users/Siddhesh/.cache/whisper"
+volumes:
+  whisper-cache:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "C:/Users/Siddhesh/.cache/whisper"
