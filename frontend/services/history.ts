@@ -1,10 +1,6 @@
 import { supabase } from "@/lib/supabase";
-import { PipelineResult } from "@/types/analysis";
 
-export async function saveSession(
-  result: PipelineResult,
-  userId: string
-): Promise<void> {
+export async function saveSession(result: any, userId: string): Promise<void> {
   const { error } = await supabase.from("sessions").insert({
     user_id: userId,
     original_transcript: result.original_transcript,
@@ -16,6 +12,7 @@ export async function saveSession(
     grammar_errors: result.analysis.grammar_errors,
     filler_words: result.analysis.filler_words,
     audio_url: result.corrected_audio_url,
+    natural_audio_url: result.natural_audio_url,
   });
 
   if (error) console.error("Failed to save session:", error);

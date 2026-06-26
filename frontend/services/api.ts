@@ -1,20 +1,30 @@
 import axios from "axios";
 import { PipelineResult } from "@/types/analysis";
+import { supabase } from "@/lib/supabase";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
-const TEST_USER_ID = "4b9548d5-5659-4bc6-8331-4990e86ca706";
+// Attach JWT token to every request automatically
+api.interceptors.request.use(async (config) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session?.access_token) {
+    config.headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return config;
+});
 
-// Step 1 — Submit audio, get task_id back immediately
-export async function submitAudio(audioBlob: Blob): Promise<string> {
+export async function submitAudio(
+  audioBlob: Blob,
+  userId: string
+): Promise<string> {
   const formData = new FormData();
   const audioFile = new File([audioBlob], "recording.webm", {
     type: "audio/webm",
   });
   formData.append("file", audioFile);
-  formData.append("user_id", TEST_USER_ID);
+  formData.append("user_id", userId);   // still sending for now — backend will verify via JWT later
 
   const response = await api.post<{ task_id: string }>(
     "/api/audio/analyze",
@@ -25,7 +35,6 @@ export async function submitAudio(audioBlob: Blob): Promise<string> {
   return response.data.task_id;
 }
 
-// Step 2 — Poll until done, return result
 export async function pollTaskResult(
   taskId: string,
   onStatusUpdate?: (status: string) => void
@@ -36,7 +45,6 @@ export async function pollTaskResult(
         const response = await api.get(`/api/audio/task/${taskId}`);
         const { status, result, error } = response.data;
 
-        // Notify parent component of current status
         if (onStatusUpdate) onStatusUpdate(status);
 
         if (status === "done") {
@@ -46,12 +54,10 @@ export async function pollTaskResult(
           clearInterval(interval);
           reject(new Error(error || "Processing failed"));
         }
-        // if queued or processing — keep polling
-
       } catch (err) {
         clearInterval(interval);
         reject(err);
       }
-    }, 2000); // poll every 2 seconds
+    }, 2000);
   });
 }
