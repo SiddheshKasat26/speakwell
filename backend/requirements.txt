@@ -1,0 +1,14 @@
+fastapi
+uvicorn[standard]
+python-dotenv
+pydantic
+pydantic-settings
+python-multipart
+openai-whisper
+groq
+gtts
+pydub
+celery[redis]
+redis
+supabase
+librosa
