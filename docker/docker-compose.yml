@@ -68,8 +68,5 @@ services:
 
 volumes:
   whisper-cache:
-    driver: local
-    driver_opts:
-      type: none
-      o: bind
-      device: "C:/Users/Siddhesh/.cache/whisper"
+    # No driver_opts — Docker manages this volume
+    # Railway will attach a persistent volume here

@@ -21,9 +21,15 @@ class Settings(BaseSettings):
         default="llama-3.3-70b-versatile",
         env="GROQ_MODEL" # overridable without code change
     )
+
+    # Whisper
     whisper_model: str = Field(
         default="base",
-        env="WHISPER_MODEL" # swap to "small" via .env anytime
+        env="WHISPER_MODEL"
+    )
+    whisper_cache_dir: str = Field(
+        default="/root/.cache/whisper",
+        env="WHISPER_CACHE_DIR"
     )
 
     # Supabase

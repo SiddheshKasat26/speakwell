@@ -28,6 +28,11 @@ COPY . .
 # Stage 6: Create directories needed at runtime
 RUN mkdir -p uploaded_audio generated_audio
 
+# Create non-root user and switch to it
+RUN useradd --create-home appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
 # Default command: FastAPI
 # This runs when container starts as "backend"
 # Overridden to celery command for "worker" in docker-compose.yml

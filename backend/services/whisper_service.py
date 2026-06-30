@@ -10,7 +10,11 @@ def get_model():
     global _model
     if _model is None:
         print(f"[Whisper] Loading model: {settings.whisper_model}")
-        _model = whisper.load_model(settings.whisper_model)
+        # Use configured cache dir — differs between local and production
+        _model = whisper.load_model(
+            settings.whisper_model,
+            download_root=settings.whisper_cache_dir
+        )
     return _model
 
 INITIAL_PROMPT = (

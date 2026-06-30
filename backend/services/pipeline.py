@@ -93,10 +93,6 @@ def run_full_pipeline(audio_file_path: str, user_id: str = None) -> dict:
             # Don't fail the whole pipeline if save fails
             print(f"[Pipeline] Warning: failed to save session: {e}")
 
-    # Cleanup uploaded file
-    if os.path.exists(audio_file_path):
-        os.remove(audio_file_path)
-
     return {
         "session_id": session_id,
         "original_transcript": transcription["text"],

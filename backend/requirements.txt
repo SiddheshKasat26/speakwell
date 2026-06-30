@@ -12,3 +12,4 @@ celery[redis]
 redis
 supabase
 librosa
+requests
