@@ -28,7 +28,7 @@ class Settings(BaseSettings):
         env="WHISPER_MODEL"
     )
     whisper_cache_dir: str = Field(
-        default="/root/.cache/whisper",
+        default="/app/whisper-cache", # ← inside /app, which appuser owns
         env="WHISPER_CACHE_DIR"
     )
 

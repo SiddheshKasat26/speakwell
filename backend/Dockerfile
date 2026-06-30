@@ -26,7 +26,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Stage 6: Create directories needed at runtime
-RUN mkdir -p uploaded_audio generated_audio
+RUN mkdir -p uploaded_audio generated_audio whisper-cache
 
 # Create non-root user and switch to it
 RUN useradd --create-home appuser
