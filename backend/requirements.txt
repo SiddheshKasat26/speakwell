@@ -4,7 +4,6 @@ python-dotenv
 pydantic
 pydantic-settings
 python-multipart
-openai-whisper
 groq
 gtts
 pydub

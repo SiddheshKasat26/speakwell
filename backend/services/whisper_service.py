@@ -1,31 +1,14 @@
-import whisper
 import librosa
 import numpy as np
+import os
+import tempfile
+from groq import Groq
 from config import settings
 
-# Don't load at import time — load on first use
-_model = None
+# Groq client — same one used for grammar analysis
+client = Groq(api_key=settings.groq_api_key)
 
-def get_model():
-    global _model
-    if _model is None:
-        print(f"[Whisper] Loading model: {settings.whisper_model}")
-        # Use configured cache dir — differs between local and production
-        _model = whisper.load_model(
-            settings.whisper_model,
-            download_root=settings.whisper_cache_dir
-        )
-    return _model
-
-INITIAL_PROMPT = (
-    "This is a person practicing English speaking. "
-    "The speaker has an Indian accent. "
-    "Common names include Indian names like Siddhesh, Priya, Raj, Amit. "
-    "Transcribe exactly what is said including any grammar mistakes. "
-    "Do not correct grammar. Do not add punctuation that wasn't implied."
-)
-
-# Known Whisper hallucination phrases — catch what slips past energy check
+# Known Whisper hallucination phrases
 HALLUCINATION_PHRASES = [
     "thank you for watching",
     "thanks for watching",
@@ -42,62 +25,34 @@ HALLUCINATION_PHRASES = [
     ".com",
 ]
 
-
 def has_real_speech(file_path: str, threshold: float = 0.01) -> bool:
     """
     Check if audio file contains real speech using RMS energy.
-
-    RMS (Root Mean Square) measures average audio power.
-    Silence has RMS near 0. Speech has RMS above threshold.
-
-    threshold=0.01 means 1% of maximum possible audio energy.
-    Below this = silence or background noise only.
+    Runs locally — cheap check before sending to API.
     """
     try:
-        # Load audio as numpy array
-        # sr=16000 matches Whisper's expected sample rate
         audio, sr = librosa.load(file_path, sr=16000, mono=True)
-
-        # Calculate RMS energy
-        rms = np.sqrt(np.mean(audio**2))
+        rms = np.sqrt(np.mean(audio ** 2))
         print(f"[Whisper] Audio RMS energy: {rms:.4f} (threshold: {threshold})")
-
         return float(rms) > threshold
-
     except Exception as e:
         print(f"[Whisper] Energy check failed: {e}")
-        return True  # if check fails, let Whisper decide
-
-
-def extract_words_from_segments(segments: list) -> list:
-    """
-    Extract individual words from Whisper segments.
-    Segments contain more raw data than the final transcript
-    including repeated words that get collapsed in the final text.
-    """
-    words = []
-    for segment in segments:
-        # Each segment has a 'words' list if word_timestamps=True
-        if "words" in segment:
-            for word_data in segment["words"]:
-                words.append(word_data["word"].strip().lower())
-        else:
-            # Fallback — split segment text into words
-            segment_words = segment.get("text", "").strip().split()
-            words.extend([w.lower() for w in segment_words])
-    return words
+        return True  # if check fails, let API decide
 
 
 def is_hallucinated(text: str) -> bool:
-    """
-    Secondary check — catch hallucinations that slipped past energy detection.
-    Keeps a list of known Whisper hallucination patterns.
-    """
+    """Secondary check — catch known hallucination phrases."""
     text_lower = text.lower().strip()
     return any(phrase in text_lower for phrase in HALLUCINATION_PHRASES)
 
 
 def transcribe_audio(file_path: str) -> dict:
+    """
+    Transcribe audio using Groq's hosted Whisper API.
+    No model loaded locally — sends audio to Groq's GPU servers.
+    Returns same dict structure as before so pipeline is unchanged.
+    """
+    # Stage 1 — Energy check (local, cheap)
     if not has_real_speech(file_path):
         print("[Whisper] Silence detected — skipping transcription")
         return {
@@ -107,24 +62,30 @@ def transcribe_audio(file_path: str) -> dict:
             "raw_words": [],
             "hallucinated": True,
         }
-    
-    model = get_model() # ← load on demand, not at startup
 
-    result = model.transcribe(
-        file_path,
-        language="en",
-        task="transcribe",
-        initial_prompt=INITIAL_PROMPT,
-        fp16=False,
-        temperature=0.0,
-        best_of=1,
-        beam_size=5,
-        word_timestamps=True, # ← request word-level timing
-    )
+    # Stage 2 — Send to Groq's Whisper API
+    print("[Whisper] Sending audio to Groq Whisper API...")
+    try:
+        with open(file_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                file=(os.path.basename(file_path), audio_file.read()),
+                model="whisper-large-v3-turbo",  # Groq's fastest Whisper model
+                response_format="verbose_json",   # includes word-level data
+                language="en",
+                prompt=(
+                    "The speaker has an Indian accent. "
+                    "Common Indian names include Siddhesh, Priya, Raj, Amit. "
+                    "Transcribe exactly what is said including grammar mistakes."
+                )
+            )
+    except Exception as e:
+        print(f"[Whisper] Groq API error: {e}")
+        raise ValueError(f"Transcription failed: {str(e)}")
 
-    text = result["text"].strip()
+    text = transcription.text.strip()
     print(f"[Whisper] Transcribed: {text}")
 
+    # Stage 3 — Hallucination check
     if is_hallucinated(text):
         print(f"[Whisper] Hallucination detected: {text}")
         return {
@@ -135,13 +96,42 @@ def transcribe_audio(file_path: str) -> dict:
             "hallucinated": True,
         }
 
-    raw_words = extract_words_from_segments(result.get("segments", []))
+    # Extract word-level data for filler detection
+    # Groq's verbose_json includes segments with word timestamps
+    segments = []
+    raw_words = []
+
+    if hasattr(transcription, "segments") and transcription.segments:
+        for segment in transcription.segments:
+            seg_dict = {
+                "text": segment.text,
+                "start": segment.start,
+                "end": segment.end,
+            }
+            # Extract words if available
+            if hasattr(segment, "words") and segment.words:
+                seg_dict["words"] = [
+                    {"word": w.word, "start": w.start, "end": w.end}
+                    for w in segment.words
+                ]
+                raw_words.extend([
+                    w.word.strip().lower()
+                    for w in segment.words
+                ])
+            else:
+                # Fallback — split segment text
+                raw_words.extend(segment.text.strip().lower().split())
+            segments.append(seg_dict)
+    else:
+        # No segment data — split the full text
+        raw_words = text.lower().split()
+
     print(f"[Whisper] Raw words: {raw_words}")
 
     return {
         "text": text,
-        "language": result.get("language", "en"),
-        "segments": result.get("segments", []),
-        "raw_words": raw_words, # ← word list before collapsing
+        "language": getattr(transcription, "language", "en"),
+        "segments": segments,
+        "raw_words": raw_words,
         "hallucinated": False,
     }
