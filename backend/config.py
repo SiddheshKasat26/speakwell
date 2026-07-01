@@ -22,16 +22,6 @@ class Settings(BaseSettings):
         env="GROQ_MODEL" # overridable without code change
     )
 
-    # Whisper
-    whisper_model: str = Field(
-        default="base",
-        env="WHISPER_MODEL"
-    )
-    whisper_cache_dir: str = Field(
-        default="/app/whisper-cache", # ← inside /app, which appuser owns
-        env="WHISPER_CACHE_DIR"
-    )
-
     # Supabase
     supabase_url: str = Field(..., env="SUPABASE_URL")
     supabase_service_key: str = Field(..., env="SUPABASE_SERVICE_KEY")
