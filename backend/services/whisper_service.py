@@ -103,28 +103,43 @@ def transcribe_audio(file_path: str) -> dict:
 
     if hasattr(transcription, "segments") and transcription.segments:
         for segment in transcription.segments:
-            seg_dict = {
-                "text": segment.text,
-                "start": segment.start,
-                "end": segment.end,
-            }
-            # Extract words if available
-            if hasattr(segment, "words") and segment.words:
-                seg_dict["words"] = [
-                    {"word": w.word, "start": w.start, "end": w.end}
-                    for w in segment.words
-                ]
-                raw_words.extend([
-                    w.word.strip().lower()
-                    for w in segment.words
-                ])
+            # Groq returns segments as dicts, not objects
+            # Handle both cases defensively
+            if isinstance(segment, dict):
+                seg_text = segment.get("text", "")
+                seg_words = segment.get("words", [])
+                seg_dict = {
+                    "text": seg_text,
+                    "start": segment.get("start", 0),
+                    "end": segment.get("end", 0),
+                }
+                if seg_words:
+                    seg_dict["words"] = seg_words
+                    raw_words.extend([
+                        w.get("word", "").strip().lower()
+                        for w in seg_words
+                    ])
+                else:
+                    raw_words.extend(seg_text.strip().lower().split())
             else:
-                # Fallback — split segment text
-                raw_words.extend(segment.text.strip().lower().split())
+                # Object-style access (fallback)
+                seg_dict = {
+                    "text": segment.text,
+                    "start": segment.start,
+                    "end": segment.end,
+                }
+                if hasattr(segment, "words") and segment.words:
+                    seg_dict["words"] = [
+                        {"word": w.word, "start": w.start, "end": w.end}
+                        for w in segment.words
+                    ]
+                    raw_words.extend([
+                        w.word.strip().lower()
+                        for w in segment.words
+                    ])
+                else:
+                    raw_words.extend(segment.text.strip().lower().split())
             segments.append(seg_dict)
-    else:
-        # No segment data — split the full text
-        raw_words = text.lower().split()
 
     print(f"[Whisper] Raw words: {raw_words}")
 
