@@ -68,9 +68,9 @@ def transcribe_audio(file_path: str) -> dict:
     try:
         with open(file_path, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(
-                file=(os.path.basename(file_path), audio_file.read()),
-                model="whisper-large-v3-turbo",  # Groq's fastest Whisper model
-                response_format="verbose_json",   # includes word-level data
+                file=("recording.webm", audio_file.read(), "audio/webm"),  # ← explicit name + mime type
+                model="whisper-large-v3-turbo",
+                response_format="verbose_json",
                 language="en",
                 prompt=(
                     "The speaker has an Indian accent. "
