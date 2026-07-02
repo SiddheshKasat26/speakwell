@@ -1,4 +1,3 @@
-import os
 from config import settings
 from services.whisper_service import transcribe_audio
 from services.groq_service import analyze_transcript
@@ -50,23 +49,19 @@ def run_full_pipeline(audio_file_path: str, user_id: str = None) -> dict:
     print("[Pipeline] Stage 3: Generating audio...")
 
     corrected_text = analysis.get("corrected_text", "")
-    natural_text = analysis.get("natural_version", "") or analysis.get(
-        "natural_text", ""
-    )
+    natural_text = analysis.get("natural_version", "") or analysis.get("natural_text", "")
 
     if not corrected_text:
         raise ValueError("Groq returned empty corrected_text")
 
-    audio_paths = generate_dual_audio(
+    audio_urls = generate_dual_audio(
         corrected_text=corrected_text,
         natural_text=natural_text if natural_text else corrected_text,
     )
 
-    # Build audio URLs
-    corrected_filename = os.path.basename(audio_paths["corrected"])
-    natural_filename = os.path.basename(audio_paths["natural"])
-    corrected_audio_url = f"/audio/{corrected_filename}"
-    natural_audio_url = f"/audio/{natural_filename}"
+    # URLs are now full Supabase Storage URLs
+    corrected_audio_url = audio_urls["corrected"]
+    natural_audio_url = audio_urls["natural"]
 
     # Stage 4 — Save to Supabase (only if user_id provided)
     print("[Pipeline] Stage 4: Saving session...")

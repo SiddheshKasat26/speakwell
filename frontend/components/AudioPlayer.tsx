@@ -23,7 +23,9 @@ export default function AudioPlayer({
 
   const fullUrl = isLocalUrl
     ? audioUrl
-    : `${process.env.NEXT_PUBLIC_API_URL}${audioUrl}`;
+    : audioUrl.startsWith("http") // ← full URL already
+      ? audioUrl
+      : `${process.env.NEXT_PUBLIC_API_URL}${audioUrl}`; // ← relative path
 
   useEffect(() => {
     if (!containerRef.current || !audioUrl) return;
