@@ -4,7 +4,7 @@
 
 **Record yourself speaking. Get instant AI feedback. Improve faster.**
 
-🌐 [speakwell-pi.vercel.app](https://speakwell-pi.vercel.app) · [Report a Bug](https://github.com/iamsiddhesh-dev/speakwell/issues) · [Request a Feature](https://github.com/iamsiddhesh-dev/speakwell/issues)
+🌐 [speakwell-live.vercel.app](https://speakwell-live.vercel.app) · [Report a Bug](https://github.com/iamsiddhesh-dev/speakwell/issues) · [Request a Feature](https://github.com/iamsiddhesh-dev/speakwell/issues)
 
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
