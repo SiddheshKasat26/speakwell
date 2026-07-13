@@ -32,7 +32,7 @@ SpeakWell is a full-stack AI-powered English speaking coach. You record yourself
 
 ## Live Demo
 
-> 🌐 [https://speakwell-pi.vercel.app](https://speakwell-pi.vercel.app)
+> 🌐 [https://speakwell-live.vercel.app](https://speakwell-live.vercel.app)
 
 Sign up with any email → click SPEAK → record yourself → get feedback in 10-15 seconds.
 
